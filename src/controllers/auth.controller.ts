@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import User from '../models/user'; // The user model where password hashing is done
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Load environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+const JWT_SECRET = process.env.JWT_SECRET_KEY as string;
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -26,7 +30,7 @@ export const register = async (req: Request, res: Response) => {
       name,
       email,
       password, // The model will handle the hashing
-      role: role || 'user', // default role is 'user'
+      role: role,
     });
 
     // Save the user to the database
@@ -52,5 +56,57 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-const authController = {register};
+export const login = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Invalid email or password' });
+    }
+
+    // Check if the password is correct
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    // Generate JWT Token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1h' } // Token expires in 1 hour
+    );
+
+    // Set token in HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      maxAge: 3600000, // 1 hour
+      sameSite: 'strict', // Prevent CSRF attacks
+    });
+
+    // Send success response
+    res.status(200).json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error });
+  }
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie('token');
+  res.status(200).json({ message: 'Logout successful' });
+};
+
+
+const authController = {register, login, logout};
 export default authController;
