@@ -7,7 +7,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: string;
+  loginAttempts: number;
+  lockUntil: number | undefined;
   comparePassword(enteredPassword: string): Promise<boolean>;
+  isLocked(): boolean;
 }
 
 // Create the User schema
@@ -28,17 +31,25 @@ const userSchema: Schema = new Schema({
   password: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: 8,
     validate: {
       validator: function (v: string) {
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/.test(v);
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W]{8,}$/.test(v);
       },
       message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.',
     },
   },
   role: {
     type: String,
-    enum: ['buyer', 'seller'],
+    enum: ['buyer', 'seller', 'admin'],
+  },
+  loginAttempts: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  lockUntil: {
+    type: Number,
   },
 }, {
   timestamps: true,
@@ -65,6 +76,11 @@ userSchema.pre<IUser>('save', async function (next) {
 // Add method to compare passwords for login
 userSchema.methods.comparePassword = async function (enteredPassword: string): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Check if the account is locked
+userSchema.methods.isLocked = function (): boolean {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
 };
 
 // Create the User model based on the schema

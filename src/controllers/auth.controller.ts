@@ -8,6 +8,8 @@ dotenv.config();
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET_KEY as string;
+const MAX_LOGIN_ATTEMPTS = 5; // Maximum allowed failed login attempts
+const LOCK_TIME = 2 * 60 * 60 * 1000; // Lock the account for 2 hours
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -60,17 +62,36 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    // Check if user exists
+    // Check if the user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'Invalid email or password' });
     }
 
+    // Check if the user account is locked
+    if (user.isLocked()) {
+      return res.status(423).json({ message: 'Account is locked. Try again later.' });
+    }
+
     // Check if the password is correct
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      // Increment login attempts
+      user.loginAttempts += 1;
+
+      // Lock the account if login attempts exceed the max allowed
+      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        user.lockUntil = Date.now() + LOCK_TIME;
+      }
+
+      await user.save();
       return res.status(400).json({ message: 'Invalid email or password' });
     }
+
+    // Reset login attempts and lock status on successful login
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    await user.save();
 
     // Generate JWT Token
     const token = jwt.sign(
