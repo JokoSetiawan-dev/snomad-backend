@@ -9,8 +9,13 @@ export interface IUser extends Document {
   role: string;
   loginAttempts: number;
   lockUntil: number | undefined;
+  resetPasswordOtp: string | undefined; // OTP for password reset
+  resetPasswordOtpExpires: Date | undefined; // OTP expiration time
+  resetPasswordOtpUsed: boolean; // Track if the OTP has been used
   comparePassword(enteredPassword: string): Promise<boolean>;
   isLocked(): boolean;
+  setPasswordResetOtp(otp: string, expiresInMinutes: number): void;
+  resetPassword(newPassword: string): Promise<void>;
 }
 
 // Create the User schema
@@ -51,6 +56,16 @@ const userSchema: Schema = new Schema({
   lockUntil: {
     type: Number,
   },
+  resetPasswordOtp: {
+    type: String,
+  },
+  resetPasswordOtpExpires: {
+    type: Date,
+  },
+  resetPasswordOtpUsed: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
@@ -81,6 +96,22 @@ userSchema.methods.comparePassword = async function (enteredPassword: string): P
 // Check if the account is locked
 userSchema.methods.isLocked = function (): boolean {
   return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Method to set OTP for password reset
+userSchema.methods.setPasswordResetOtp = function (otp: string, expiresInMinutes: number): void {
+  this.resetPasswordOtp = otp;
+  this.resetPasswordOtpExpires = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+  this.resetPasswordOtpUsed = false; // Reset used flag to false
+};
+
+// Method to reset the password
+userSchema.methods.resetPassword = async function (newPassword: string): Promise<void> {
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(newPassword, salt);
+  this.resetPasswordOtp = undefined; // Clear OTP after successful reset
+  this.resetPasswordOtpExpires = undefined;
+  this.resetPasswordOtpUsed = true; // Mark OTP as used
 };
 
 // Create the User model based on the schema
