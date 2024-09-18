@@ -12,6 +12,8 @@ export interface IUser extends Document {
   resetPasswordOtp: string | undefined; // OTP for password reset
   resetPasswordOtpExpires: Date | undefined; // OTP expiration time
   resetPasswordOtpUsed: boolean; // Track if the OTP has been used
+  locationSharing: boolean; 
+  currentLocation: { lat: number | null; lng: number | null };
   comparePassword(enteredPassword: string): Promise<boolean>;
   isLocked(): boolean;
   setPasswordResetOtp(otp: string, expiresInMinutes: number): void;
@@ -65,6 +67,20 @@ const userSchema: Schema = new Schema({
   resetPasswordOtpUsed: {
     type: Boolean,
     default: false,
+  },
+  locationSharing: {
+    type: Boolean,
+    default: false, // Location sharing off by default
+  },
+  currentLocation: {
+    lat: {
+      type: Number,
+      default: null,
+    },
+    lng: {
+      type: Number,
+      default: null,
+    },
   },
 }, {
   timestamps: true,
