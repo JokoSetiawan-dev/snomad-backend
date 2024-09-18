@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 
+dotenv.config();
 // Define a custom Request interface with additional properties
 interface CustomRequest extends Request {
     _id?: string; // User's MongoDB _id
