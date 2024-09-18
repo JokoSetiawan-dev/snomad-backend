@@ -49,15 +49,15 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
       to: email,
       subject: "Password Reset Request - Your OTP Code",
       text: `You have requested to reset your password. To complete the process, please use the following One-Time Password (OTP):
-
-            Your OTP Code: ${otp}
-
-            This code is valid for the next 10 minutes. Please do not share this code with anyone.
-
-            If you did not request this password reset, please ignore this email or contact our support team for assistance.
-
-            Thank you,
-            Snomad Support Team`,
+      
+      Your OTP Code: ${otp}
+      
+This code is valid for the next 10 minutes. Please do not share this code with anyone.
+      
+If you did not request this password reset, please ignore this email or contact our support team for assistance.
+      
+Thank you,
+Snomad Support Team`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -100,12 +100,8 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'User with this email does not exist' });
     }
 
-    // Hash the new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
     // Update the user's password and clear the OTP fields
-    user.password = hashedPassword;
+    user.password = newPassword;
     user.resetPasswordOtp = undefined; // Clear OTP
     user.resetPasswordOtpExpires = undefined; // Clear OTP expiration
     await user.save();
