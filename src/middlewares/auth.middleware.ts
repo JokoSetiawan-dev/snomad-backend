@@ -10,7 +10,7 @@ interface CustomRequest extends Request {
     role?: string; // Optional role
 }
 
-const authenticationMiddleware = (req: CustomRequest, res: Response, next: NextFunction) => {
+export const authenticationMiddleware = (req: CustomRequest, res: Response, next: NextFunction) => {
     // Extract token from cookies
     const token = req.cookies.token; // Adjust the name to match your cookie name
 
@@ -37,7 +37,7 @@ interface AuthorizationMiddlewareOptions {
     role: string[];
 }
 
-const authorizationMiddleware = ({ role }: AuthorizationMiddlewareOptions) => (
+export const authorizationMiddleware = ({ role }: AuthorizationMiddlewareOptions) => (
     req: CustomRequest,
     res: Response,
     next: NextFunction
@@ -47,5 +47,3 @@ const authorizationMiddleware = ({ role }: AuthorizationMiddlewareOptions) => (
     }
     next();
 };
-
-export default {authenticationMiddleware, authorizationMiddleware};
