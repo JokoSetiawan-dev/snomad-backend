@@ -1,5 +1,3 @@
-import cors from 'cors';
-
 // Configure allowed origins
 const allowedOrigins = ['*'];
 
