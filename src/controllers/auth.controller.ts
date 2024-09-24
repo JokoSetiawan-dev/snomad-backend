@@ -8,6 +8,7 @@ dotenv.config();
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET_KEY as string;
+const JWT_REFRESH = process.env.JWT_REFRESH_KEY as string;
 const MAX_LOGIN_ATTEMPTS = 5; // Maximum allowed failed login attempts
 const LOCK_TIME = 2 * 60 * 60 * 1000; // Lock the account for 2 hours
 
@@ -94,19 +95,35 @@ export const login = async (req: Request, res: Response) => {
     await user.save();
 
     // Generate JWT Token
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { id: user._id, role: user.role },
       JWT_SECRET,
-      { expiresIn: '1h' } // Token expires in 1 hour
+      { expiresIn: '15m' } // Token expires in 15 minutes
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id, role: user.role },
+      JWT_REFRESH,
+      { expiresIn: '7d' } // Token refresh expires in 7 days
     );
 
     // Set token in HTTP-only cookie
-    res.cookie('token', token, {
+    res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
       maxAge: 3600000, // 1 hour
       sameSite: 'strict', // Prevent CSRF attacks
     });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      maxAge: 3600000, // 1 hour
+      sameSite: 'strict', // Prevent CSRF attacks
+    });
+
+    user.refreshToken = refreshToken; // Store refresh token
+    await user.save();
 
     // Send success response
     res.status(200).json({
@@ -123,11 +140,34 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const refreshToken = async (req: Request, res: Response) => {
+  const { refreshToken } = req.cookies.refreshToken;
+
+  if (!refreshToken) return res.sendStatus(401); // No refresh token provided
+
+  const user = await User.findOne({ refreshToken: refreshToken });
+  if (!user) return res.sendStatus(403); // Invalid refresh token
+
+  jwt.verify(refreshToken, JWT_REFRESH, (err: any) => {
+    if (err) return res.sendStatus(403); // Invalid refresh token
+  });
+
+  const newAccessToken = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '15m' });
+
+  // Set token in HTTP-only cookie
+  res.cookie('accessToken', newAccessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    maxAge: 3600000, // 1 hour
+    sameSite: 'strict', // Prevent CSRF attacks
+  });
+};
+
 export const logout = (req: Request, res: Response) => {
   res.clearCookie('token');
   res.status(200).json({ message: 'Logout successful' });
 };
 
 
-const authController = {register, login, logout};
+const authController = {register, login, refreshToken,logout};
 export default authController;

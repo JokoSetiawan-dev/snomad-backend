@@ -7,6 +7,7 @@ const authRoutes = express.Router();
 
 authRoutes.post("/register", [...validateName, ...validateEmail, ...validatePassword, ...validateRole], handleValidationErrors,authController.register)
 authRoutes.post("/login", [...validateEmail, ...validatePassword], handleValidationErrors,authController.login)
+authRoutes.post('/refresh-token', authenticationMiddleware,authController.refreshToken);
 authRoutes.post("/logout", authenticationMiddleware, authController.logout)
 
 export default authRoutes

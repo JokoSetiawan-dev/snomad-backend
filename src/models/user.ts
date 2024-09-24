@@ -18,6 +18,7 @@ export interface IUser extends Document {
   isLocked(): boolean;
   setPasswordResetOtp(otp: string, expiresInMinutes: number): void;
   resetPassword(newPassword: string): Promise<void>;
+  refreshToken?: string;
 }
 
 // Create the User schema
@@ -67,6 +68,9 @@ const userSchema: Schema = new Schema({
   resetPasswordOtpUsed: {
     type: Boolean,
     default: false,
+  },
+  refreshToken: {
+    type: String,
   },
   locationSharing: {
     type: Boolean,
