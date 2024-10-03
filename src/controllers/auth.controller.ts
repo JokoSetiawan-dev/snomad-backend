@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import User from '../models/user'; // The user model where password hashing is done
+import Store from '../models/store'; // Store model
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -70,7 +71,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check if the user account is locked
-    if (user.isLocked()) {
+    if (user.isLocked && user.isLocked()) {
       return res.status(423).json({ message: 'Account is locked. Try again later.' });
     }
 
@@ -94,38 +95,50 @@ export const login = async (req: Request, res: Response) => {
     user.lockUntil = undefined;
     await user.save();
 
-    // Generate JWT Token
+    // Retrieve the seller's store data
+    const store = await Store.findOne({ owner: user._id });
+
+    // Generate Access Token with user and store data
     const accessToken = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        store: store ? {
+          storeId: store._id,
+          name: store.name
+        } : null,
+      },
       JWT_SECRET,
       { expiresIn: '15m' } // Token expires in 15 minutes
     );
 
+    // Generate Refresh Token
     const refreshToken = jwt.sign(
       { id: user._id, role: user.role },
       JWT_REFRESH,
       { expiresIn: '7d' } // Token refresh expires in 7 days
     );
 
-    // Set token in HTTP-only cookie
+    // Store refresh token in the database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set tokens in HTTP-only cookies
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      maxAge: 3600000, // 1 hour
+      maxAge: 15 * 60 * 1000, // 15 minutes
       sameSite: 'strict', // Prevent CSRF attacks
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      maxAge: 3600000, // 1 hour
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'strict', // Prevent CSRF attacks
     });
 
-    user.refreshToken = refreshToken; // Store refresh token
-    await user.save();
-
-    // Send success response
+    // Send success response with user and store data (if available)
     res.status(200).json({
       message: 'Login successful',
       user: {
@@ -133,6 +146,10 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        store: store ? {
+          storeId: store._id,
+          name: store.name
+        } : null,
       },
     });
   } catch (error) {
