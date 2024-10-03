@@ -9,7 +9,7 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET_KEY as string;
 
 export const shareLocationOn = async (req: Request, res: Response) => {
-  const token = req.cookies.token;
+  const token = req.cookies.accessToken;
 
   const decoded = jwt.verify(token, JWT_SECRET) as {
     _id: string;
@@ -35,7 +35,7 @@ export const shareLocationOn = async (req: Request, res: Response) => {
 };
 
 export const shareLocationOff = async (req: Request, res: Response) => {
-    const token = req.cookies.token;
+  const token = req.cookies.accessToken;
 
   const decoded = jwt.verify(token, JWT_SECRET) as {
     _id: string;
@@ -59,7 +59,7 @@ export const shareLocationOff = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
-}
+};
 
 const locationController = { shareLocationOn, shareLocationOff };
 export default locationController;

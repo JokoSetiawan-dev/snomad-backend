@@ -12,7 +12,7 @@ export const createStore = async (req: Request, res: Response) => {
   try {
     const { name, description } = req.body;
 
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
       _id: string;
@@ -66,7 +66,7 @@ export const editStoreProfile = async (req: Request, res: Response) => {
   try {
     const { name, description } = req.body;
     const storeId = req.params.storeId;
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
       _id: string;

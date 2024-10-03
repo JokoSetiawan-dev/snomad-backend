@@ -12,7 +12,7 @@ export const createMenuItem = async (req: Request, res: Response) => {
   try {
     const { name, description, price } = req.body;
 
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
       store: {
@@ -57,7 +57,7 @@ export const createMenuItem = async (req: Request, res: Response) => {
 
 export const getMenuItemsByStore = async (req: Request, res: Response) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
       store: {
