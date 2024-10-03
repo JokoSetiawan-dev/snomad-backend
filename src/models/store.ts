@@ -6,6 +6,7 @@ interface IStore extends Document {
   description: string;
   logoUrl: string;
   bannerUrl?: string;
+  rating?: number;
   owner: mongoose.Schema.Types.ObjectId;
 }
 
@@ -15,6 +16,7 @@ const StoreSchema: Schema = new Schema({
   description: { type: String, required: true },
   logoUrl: { type: String, required: true },
   bannerUrl: { type: String },
+  rating: { type: Number, default: 0},
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 
