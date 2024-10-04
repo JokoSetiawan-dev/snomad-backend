@@ -2,6 +2,7 @@ import express from 'express';
 import { createStore } from '../controllers/store.controller';
 import upload from '../middlewares/upload.middleware';
 import { authenticationMiddleware, authorizationMiddleware } from '../middlewares/auth.middleware';
+import { handleValidationErrors, validateDescription, validateName } from '../middlewares/inputValidator.middleware';
 
 const storeRoutes = express.Router();
 
@@ -11,6 +12,8 @@ storeRoutes.post(
   authenticationMiddleware,
   authorizationMiddleware({ role: ['seller'] }),  // Ensure the user is authenticated
   upload,                    // Multer middleware to handle file uploads
+  [...validateName, ...validateDescription],
+  handleValidationErrors,
   createStore                // Controller that creates the store
 );
 
