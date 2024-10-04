@@ -19,6 +19,7 @@ export interface IUser extends Document {
   setPasswordResetOtp(otp: string, expiresInMinutes: number): void;
   resetPassword(newPassword: string): Promise<void>;
   refreshToken?: string;
+  favoriteStores: mongoose.Schema.Types.ObjectId[];
 }
 
 // Create the User schema
@@ -51,6 +52,10 @@ const userSchema: Schema = new Schema({
     type: String,
     enum: ['buyer', 'seller', 'admin'],
   },
+  favoriteStores: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Store',
+  }],
   loginAttempts: {
     type: Number,
     required: true,
