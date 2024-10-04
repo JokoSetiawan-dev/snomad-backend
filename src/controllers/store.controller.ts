@@ -62,6 +62,38 @@ export const createStore = async (req: Request, res: Response) => {
   }
 };
 
+export const getStoreById = async (req: Request, res: Response) => {
+  try {
+    const { storeId } = req.params;
+
+    // Find the store by its ID
+    const store = await Store.findById(storeId).populate('owner', 'name email'); // Populates the owner's name and email
+
+    if (!store) {
+      return res.status(404).json({ message: 'Store not found' });
+    }
+
+    return res.status(200).json(store);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const getAllStores = async (req: Request, res: Response) => {
+  try {
+    // Fetch all stores from the database
+    const stores = await Store.find().populate('owner', 'name email');
+
+    if (stores.length === 0) {
+      return res.status(404).json({ message: 'No stores found' });
+    }
+
+    return res.status(200).json(stores);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 export const editStoreProfile = async (req: Request, res: Response) => {
   try {
     const { name, description } = req.body;

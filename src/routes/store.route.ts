@@ -1,5 +1,5 @@
 import express from 'express';
-import { createStore } from '../controllers/store.controller';
+import { createStore, editStoreProfile, getAllStores } from '../controllers/store.controller';
 import upload from '../middlewares/upload.middleware';
 import { authenticationMiddleware, authorizationMiddleware } from '../middlewares/auth.middleware';
 import { handleValidationErrors, validateDescription, validateName } from '../middlewares/inputValidator.middleware';
@@ -14,7 +14,29 @@ storeRoutes.post(
   upload,                    // Multer middleware to handle file uploads
   [...validateName, ...validateDescription],
   handleValidationErrors,
-  createStore                // Controller that creates the store
+  createStore                
+);
+
+storeRoutes.get(
+  '/:storeId',
+  authenticationMiddleware,
+  getAllStores
+);
+
+storeRoutes.get(
+  '/',
+  authenticationMiddleware,
+  getAllStores
+);
+
+storeRoutes.put(
+  '/update',
+  authenticationMiddleware,
+  authorizationMiddleware({ role: ['seller'] }),  // Ensure the user is authenticated
+  upload,                    // Multer middleware to handle file uploads
+  [...validateName, ...validateDescription],
+  handleValidationErrors,
+  editStoreProfile                // Controller that creates the store
 );
 
 export default storeRoutes;
