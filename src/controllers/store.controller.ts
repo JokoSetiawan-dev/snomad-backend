@@ -81,11 +81,37 @@ export const getStoreById = async (req: Request, res: Response) => {
 
 export const getAllStores = async (req: Request, res: Response) => {
   try {
-    // Fetch all stores from the database
-    const stores = await Store.find().populate('owner', 'name email');
+    // Destructure filter and sorting parameters from the query string
+    const { keyword, minPrice, maxPrice, sortBy, sortOrder } = req.query;
 
-    if (stores.length === 0) {
-      return res.status(404).json({ message: 'No stores found' });
+    // Build the filter object based on the presence of query parameters
+    const filter: any = {};
+    if (keyword) {
+      filter.name = { $regex: keyword, $options: 'i' }; // Fuzzy search by name (case-insensitive)
+    }
+    if (minPrice) {
+      filter['menu.price'] = { $gte: Number(minPrice) }; // Minimum price filter
+    }
+    if (maxPrice) {
+      filter['menu.price'] = { ...filter['menu.price'], $lte: Number(maxPrice) }; // Maximum price filter
+    }
+
+    // Determine sorting order and field
+    const sort: any = {};
+    if (sortBy) {
+      // Ensure sortOrder is either 'asc' or 'desc', default is 'asc'
+      sort[sortBy as string] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sort['name'] = 1; // Default sorting by name if no sortBy is provided
+    }
+
+    // Fetch stores based on the filter and sort criteria
+    const stores = await Store.find(filter)
+      .populate('owner', 'name email')
+      .sort(sort);
+
+    if (!stores || stores.length === 0) {
+      return res.status(200).json({ message: 'No stores found', stores: [] });
     }
 
     return res.status(200).json(stores);
@@ -93,6 +119,7 @@ export const getAllStores = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 export const editStoreProfile = async (req: Request, res: Response) => {
   try {
