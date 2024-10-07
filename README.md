@@ -375,27 +375,71 @@ This API requires JWT-based authentication. The access token must be passed via 
 - **Description**: Retrieve all stores.
 - **Authentication**: Yes
 - **Authorization**: Any authenticated user
-- **Request Parameters**: None
-- **Response**:
-  - **200 OK**: 
-    ```json
-    [
-      {
-        "_id": "store_id",
-        "name": "Store Name",
-        "description": "Store Description",
-        "logoUrl": "https://cloudinary.com/store-logo",
-        "bannerUrl": "https://cloudinary.com/store-banner",
-        "owner": {
-          "name": "Owner Name",
-          "email": "owner@example.com"
+- **Query Parameters**
+  - `keyword` (optional): A string to perform fuzzy search by store name (case-insensitive). Example: `keyword=coffee`.
+  - `minPrice` (optional): A number to filter stores with menu items having a minimum price. Example: `minPrice=10`.
+  - `maxPrice` (optional): A number to filter stores with menu items having a maximum price. Example: `maxPrice=50`.
+  - `sortBy` (optional): A field to sort the results by. Example: `sortBy=name`. Default is `name`.
+  - `sortOrder` (optional): The sorting order, either `asc` or `desc`. Example: `sortOrder=desc`. Default is `asc`.
+- **Responses**
+  - **200 OK**
+  Example response:
+  ```json
+  [
+    {
+      "_id": "60e6f234f8652a001f87c9d3",
+      "name": "Store Name",
+      "menu": [
+        {
+          "name": "Coffee",
+          "price": 10
+        },
+        {
+          "name": "Sandwich",
+          "price": 20
         }
-      },
-      ...
-    ]
+      ],
+      "owner": {
+        "_id": "60e6f1234f8652a001f87c9a",
+        "name": "Owner Name",
+        "email": "owner@example.com"
+      }
+    }
+  ]
+  ```
+  - **200 OK (No Stores Found)**
+    - If no stores match the filter criteria.
+
+    Example response:
+    ```json
+    {
+      "message": "No stores found",
+      "stores": []
+    }
     ```
-  - **404 Not Found**: If no stores exist.
-  - **500 Internal Server Error**: On server issues.
+
+  - **500 Internal Server Error**
+    - If there is an error on the server.
+
+    Example response:
+    ```json
+    {
+      "message": "Server error",
+      "error": "Error message"
+    }
+    ```
+
+    - **Filters & Sorting**
+
+      1. **Keyword Search:**
+        - Uses a regular expression to perform a fuzzy search on store names. It is case-insensitive.
+
+      2. **Price Filtering:**
+        - Filters stores based on the `menu.price` field. You can specify a `minPrice` and/or `maxPrice` to limit results.
+
+      3. **Sorting:**
+        - Sorts results by the specified field (`sortBy`). The default field for sorting is the store `name`. Sorting order can be specified as either `asc` (ascending) or `desc` (descending). If not provided, the default is `asc`.
+
 
 ---
 
