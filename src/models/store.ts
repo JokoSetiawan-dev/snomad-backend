@@ -20,5 +20,8 @@ const StoreSchema: Schema = new Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 
+// Creating a text index on name and description for search
+StoreSchema.index({ name: 'text', description: 'text' });
+
 const Store = mongoose.model<IStore>('Store', StoreSchema);
 export default Store;
