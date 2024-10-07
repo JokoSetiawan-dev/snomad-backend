@@ -24,9 +24,9 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
         .json({ message: "User with this email does not exist" });
     }
 
-    // Generate a 6-digit OTP and set expiration (e.g., 15 minutes)
+    // Generate a 6-digit OTP and set expiration (e.g., 1 minutes)
     const otp = generateOTP();
-    const otpExpiration = new Date(Date.now() + 15 * 60 * 1000);// 15 minutes from now
+    const otpExpiration = new Date(Date.now() + 1 * 60 * 1000);// 1 minutes from now
 
     // Update the user's OTP and OTP expiration
     user.resetPasswordOtp = otp;
