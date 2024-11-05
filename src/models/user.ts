@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 
 // Define an interface for the User model
 export interface IUser extends Document {
+  googleId?: string;
   name: string;
   email: string;
   password: string;
@@ -19,11 +20,15 @@ export interface IUser extends Document {
   setPasswordResetOtp(otp: string, expiresInMinutes: number): void;
   resetPassword(newPassword: string): Promise<void>;
   refreshToken?: string;
-  favoriteStores: mongoose.Schema.Types.ObjectId[];
 }
 
 // Create the User schema
 const userSchema: Schema = new Schema({
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   name: {
     type: String,
     required: true,
@@ -39,7 +44,9 @@ const userSchema: Schema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function(this: IUser) { 
+      return !this.googleId; // Password is required only if googleId is not present
+    },
     minlength: 8,
     validate: {
       validator: function (v: string) {
@@ -52,10 +59,6 @@ const userSchema: Schema = new Schema({
     type: String,
     enum: ['buyer', 'seller', 'admin'],
   },
-  favoriteStores: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Store',
-  }],
   loginAttempts: {
     type: Number,
     required: true,
