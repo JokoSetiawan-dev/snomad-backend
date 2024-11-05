@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import User from '../models/user'; // The user model where password hashing is done
@@ -14,6 +14,7 @@ const MAX_LOGIN_ATTEMPTS = 5; // Maximum allowed failed login attempts
 const LOCK_TIME = 2 * 60 * 60 * 1000; // Lock the account for 2 hours
 
 // Register a new user
+
 export const register = async (req: Request, res: Response) => {
   const { name, email, password, role } = req.body;
 
@@ -40,9 +41,6 @@ export const register = async (req: Request, res: Response) => {
     // Save the user to the database
     const savedUser = await newUser.save();
 
-    // Generate a JWT token
-    const token = jwt.sign({ id: savedUser._id }, JWT_SECRET, { expiresIn: '1d' });
-
     // Send response back with the new user info and the token
     res.status(201).json({
       message: 'User registered successfully',
@@ -52,7 +50,6 @@ export const register = async (req: Request, res: Response) => {
         email: savedUser.email,
         role: savedUser.role,
       },
-      token,
     });
   } catch (error) {
     console.error(error);
@@ -151,6 +148,7 @@ export const login = async (req: Request, res: Response) => {
           name: store.name
         } : null,
       },
+      accessToken
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error });
