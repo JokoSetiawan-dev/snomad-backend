@@ -7,5 +7,6 @@ const passwordRoutes = express.Router();
 passwordRoutes.post("/request-reset", validateEmail,handleValidationErrors,passwordController.requestPasswordReset)
 passwordRoutes.post("/otp-validation", [...validateEmail, ...validateOtp],handleValidationErrors, passwordController.validateOtp)
 passwordRoutes.post("/reset-password", [...validateEmail, ...validatePassword], handleValidationErrors, passwordController.resetPassword)
+passwordRoutes.post("/change-password", [...validatePassword], handleValidationErrors, passwordController.changePassword)
 
 export default passwordRoutes
