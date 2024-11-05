@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { uploadToCloudinary } from "../services/uploadToCloudinary";
 import Store from "../models/store";
+import SearchTrend from '../models/trends';
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+
 
 dotenv.config();
 
@@ -86,9 +88,21 @@ export const getAllStores = async (req: Request, res: Response) => {
 
     // Build the filter object based on the presence of query parameters
     const filter: any = {};
-    if (keyword) {
+    if (keyword && typeof keyword === 'string') {
       filter.name = { $regex: keyword, $options: 'i' }; // Fuzzy search by name (case-insensitive)
+
+      // Log the keyword in SearchTrend collection
+      const lowerCaseKeyword = keyword.toLowerCase()
+      const trend = await SearchTrend.findOne({ keyword: lowerCaseKeyword });
+      if (trend) {
+        trend.count += 1; // Increment the count if the keyword already exists
+        await trend.save();
+      } else {
+        // Create a new trend entry if it doesn't exist
+        await SearchTrend.create({ keyword: lowerCaseKeyword, count: 1 });
+      }
     }
+
     if (minPrice) {
       filter['menu.price'] = { $gte: Number(minPrice) }; // Minimum price filter
     }
