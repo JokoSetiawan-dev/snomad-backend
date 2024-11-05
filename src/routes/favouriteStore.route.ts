@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addFavoriteStore, removeFavoriteStore } from '../controllers/favouriteStore.controller';
+import { addFavoriteStore, removeFavoriteStore, getFavouriteStoreById } from '../controllers/favouriteStore.controller';
 import { authenticationMiddleware, authorizationMiddleware } from '../middlewares/auth.middleware';
 
 const favouriteStoreRoutes = Router();
@@ -9,5 +9,6 @@ favouriteStoreRoutes.post('/add', authenticationMiddleware, authorizationMiddlew
 
 // Remove store from favorites
 favouriteStoreRoutes.post('/remove', authenticationMiddleware, authorizationMiddleware({ role: ['buyer'] }), removeFavoriteStore);
+favouriteStoreRoutes.get('/:userId', authenticationMiddleware, getFavouriteStoreById);
 
 export default favouriteStoreRoutes;
