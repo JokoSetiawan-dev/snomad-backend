@@ -2,10 +2,13 @@
 
 import { Request, Response } from "express";
 import User from "../models/user";
-import crypto from "crypto";
-import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from "dotenv";
 import nodemailer from "nodemailer"; // You need to configure nodemailer with your email service provider
 
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET_KEY as string;
 // Generate a random 6-digit OTP
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -62,7 +65,7 @@ Snomad Support Team`,
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ message: "OTP has been sent to your email" });
+    res.status(200).json({data: email, message: "OTP has been sent to your email" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -84,14 +87,14 @@ export const validateOtp = async (req: Request, res: Response) => {
     }
     
 
-    res.status(200).json({ message: 'OTP is valid, you can now reset your password' });
+    res.status(200).json({ email:email, message: 'OTP is valid, you can now reset your password' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-  const { email, newPassword } = req.body;
+  const { email, password } = req.body;
 
   try {
     // Find the user by email
@@ -101,7 +104,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     // Update the user's password and clear the OTP fields
-    user.password = newPassword;
+    user.password = password;
     user.resetPasswordOtp = undefined; // Clear OTP
     user.resetPasswordOtpExpires = undefined; // Clear OTP expiration
     await user.save();
@@ -112,5 +115,37 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-const passwordController = { requestPasswordReset, validateOtp, resetPassword };
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    // Extract the current and new passwords from the request body
+    const { currentPassword, newPassword } = req.body;
+    const token = req.cookies.accessToken;
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, JWT_SECRET) as { _id: string };
+    const userId = decoded._id;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify the current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update the user's password in the database (hashing is handled by the model)
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+const passwordController = { requestPasswordReset, validateOtp, resetPassword, changePassword };
 export default passwordController;
