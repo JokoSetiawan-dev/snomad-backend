@@ -15,6 +15,7 @@ import googleAuthController from './controllers/googleAuth.controller';
 import passport from 'passport';
 import session, { SessionOptions } from 'express-session';
 import googleAuthRoutes from './routes/googleAuth.route';
+import userRoutes from './routes/user.route';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use(session({
 app.get('/', (req, res) => res.send('API is running'));
 
 app.use("/auth",authRoutes, googleAuthRoutes)
+app.use("/user",userRoutes)
 app.use("/auth/password", apiLimiter,passwordRoutes)
 app.use("/location", apiLimiter,locationRoutes)
 app.use("/store", apiLimiter,storeRoutes, storeMenuRoutes, reviewRoutes)
