@@ -7,6 +7,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  profilePicture?: string;
+  telephone?: number;
   role: string;
   loginAttempts: number;
   lockUntil: number | undefined;
@@ -58,6 +60,12 @@ const userSchema: Schema = new Schema({
   role: {
     type: String,
     enum: ['buyer', 'seller', 'admin'],
+  },
+  telephone: {
+    type: Number,
+  },
+  profilePicture: {
+    type: String,
   },
   loginAttempts: {
     type: Number,
